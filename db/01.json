@@ -1,0 +1,14 @@
+[
+    {
+        "msgID": "01",
+        "emoji": "❤️",
+        "adminID": "01",
+        "adminTag": "admin",
+        "channelID": "01",
+        "roleID": "01",
+        "welcome": "You will receive updates from now on.",
+        "goodbye": "You won't receive any updates from now on.",
+        "uses": 0,
+        "limit": 12
+    }
+]
