@@ -38,4 +38,5 @@ export default async function (bot) {
         console.log(err);
     };
 
+    console.log("Waiting for interactions...");
 }

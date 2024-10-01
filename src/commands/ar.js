@@ -8,7 +8,7 @@ export const slash = new SlashCommandBuilder()
     .addSubcommand(subcommand =>
         subcommand
             .setName('setup')
-            .setDescription("Setup a new reaction role system")
+            .setDescription("Setup a new single reaction role automation")
             .addChannelOption(option =>
                 option.setName("channel")
                     .setDescription("Channel with the message")
@@ -25,9 +25,17 @@ export const slash = new SlashCommandBuilder()
                 option.setName("role")
                     .setDescription("Role given after reacting")
                     .setRequired(true))
+            .addChannelOption(option =>
+                option.setName("welcomechannel")
+                    .setDescription("Channel where will be the welcome message sent")
+                    .setRequired(false))
             .addStringOption(option =>
                 option.setName("welcome")
                     .setDescription("Message sent to the member after adding the reaction")
+                    .setRequired(false))
+            .addChannelOption(option =>
+                option.setName("goodbyechannel")
+                    .setDescription("Channel where will be the goodbye message sent")
                     .setRequired(false))
             .addStringOption(option =>
                 option.setName("goodbye")
@@ -35,13 +43,19 @@ export const slash = new SlashCommandBuilder()
                     .setRequired(false))
             .addIntegerOption(option =>
                 option.setName("limit")
-                    .setDescription("Limit of users to claim the role")
+                    .setDescription("Maximum of users to claim the role")
+                    .setMinValue(1)
                     .setRequired(false))
+            .addIntegerOption(option =>
+                option.setName("maxclaims")
+                    .setDescription("Count if roles can user claim from this message [OVERWRITES PREVIOUS maxclaims SETTING]")
+                    .setRequired(false)
+                    .setMinValue(1))
     )
     .addSubcommand(subcommand =>
         subcommand
             .setName('remove')
-            .setDescription("Setup a new reaction role automation")
+            .setDescription("Remove a single reaction role automation")
             .addStringOption(option =>
                 option.setName("message")
                     .setDescription("Message ID")
@@ -62,27 +76,57 @@ export default async function run(bot, i) {
 
         const channel = i.options.getChannel("channel");
         let message = i.options.getString("message");
-        const emoji = i.options.getString("emoji");
+        let emoji = i.options.getString("emoji");
         const role = i.options.getRole("role");
+        const welcomeChannel = i.options.getChannel("welcomechannel");
         const welcome = i.options.getString("welcome");
+        const goodbyeChannel = i.options.getChannel("goodbyechannel");
         const goodbye = i.options.getString("goodbye");
         const limit = i.options.getInteger("limit");
+        const maxClaims = i.options.getInteger("maxclaims");
 
         if (![0, 5, 11, 12].includes(channel.type))
             return i.editReply({ content: `🛑 Channel <#${channel.id}> is **not a text type**! There are no messages.`, ephemeral: true });
 
-        if (!channel.viewable)
-            return i.editReply({ content: `🛑 I don't have **access to <#${channel.id}>**!`, ephemeral: true });
+        if (welcomeChannel && ![0, 5, 11, 12].includes(welcomeChannel.type))
+            return i.editReply({ content: `🛑 Channel <#${welcomeChannel.id}> is **not a text type**! There are no messages.`, ephemeral: true });
 
-        message = await channel.messages.fetch(message);
+        if (goodbyeChannel && ![0, 5, 11, 12].includes(goodbyeChannel.type))
+            return i.editReply({ content: `🛑 Channel <#${goodbyeChannel.id}> is **not a text type**! There are no messages.`, ephemeral: true });
+
+        if (!channel.viewable)
+            return i.editReply({ content: `🛑 I don't have **the access to <#${channel.id}>**!`, ephemeral: true });
+
+        if (welcomeChannel && !welcomeChannel.viewable)
+            return i.editReply({ content: `🛑 I don't have **the access to <#${welcomeChannel.id}>**!`, ephemeral: true });
+
+        if (goodbyeChannel && !goodbyeChannel.viewable)
+            return i.editReply({ content: `🛑 I don't have **the access to <#${goodbyeChannel.id}>**!`, ephemeral: true });
+
+        message = await channel.messages.fetch(message).catch(() => null);
 
         if (!message)
             return i.editReply({ content: `🛑 Message was **not found** in <#${channel.id}>! Did you enter the correct ID?`, ephemeral: true });
         else
-            i.editReply({
+            await i.editReply({
                 content: `> ✅ **Message found!**\n> ❓ *Searching for the reaction...*\n> ❓ *Checking the role...*\n> ❓ *Booting the database...*`,
                 ephemeral: true
             });
+
+        const numMap = new Map([
+            ["0⃣", ":zero:"],
+            ["1⃣", ":one:"],
+            ["2⃣", ":two:"],
+            ["3⃣", ":three:"],
+            ["4⃣", ":four:"],
+            ["5⃣", ":five:"],
+            ["6⃣", ":six:"],
+            ["7⃣", ":seven:"],
+            ["8⃣", ":eight:"],
+            ["9⃣", ":nine:"],
+            ["🔟", ":ten:"]
+        ]);
+        if (numMap.has(emoji)) emoji = numMap.get(emoji);
 
         if (message.reactions.cache.has(emoji)) {
             i.editReply({
@@ -90,28 +134,26 @@ export default async function run(bot, i) {
                 ephemeral: true
             });
         } else {
-            message.react(emoji)
-                .then(() =>
-                    i.editReply({
+            const reacted = await message.react(emoji)
+                .then(async () =>
+                    await i.editReply({
                         content: `> ✅ **Message found!**\n> ✅ **Reaction added!**\n> ❓ *Checking the role...*\n> ❓ *Booting the database...*`,
                         ephemeral: true
                     })
-                ).catch((e) => {
-                    console.error(e);
-                    return i.editReply({
-                        content: `**Error!** I don't have permission to add reaction.\n> ✅ **Message found!**\n> 🛑 **Reaction could not be added!**\n> ⭕ *Checking the role...*\n> ⭕ *Booting the database...*`,
-                        ephemeral: true
-                    });
-                });
+                ).catch(() => false);
+            if (!reacted) return i.editReply({
+                content: `**Error!** I don't have **the permission** to add reaction or I don't know **the emoji**.\n> ✅ **Message found!**\n> 🛑 **Reaction could not be added!**\n> ⭕ *Checking the role...*\n> ⭕ *Booting the database...*`,
+                ephemeral: true
+            });
         }
 
         if (!role.editable)
             return i.editReply({
-                content: `**Error!** Unable to assign the role.\nCheck my permission and my role position to be above this role.\n> ✅ **Message found!**\n> ✅ **Reaction found!**\n> 🛑 **Cannot assign this role!**\n> ⭕ *Booting the database...*`,
+                content: `**Error!** Unable to assign the role.\nCheck **my permission** and **my role position** to be above this role.\n> ✅ **Message found!**\n> ✅ **Reaction found!**\n> 🛑 **Cannot assign this role!**\n> ⭕ *Booting the database...*`,
                 ephemeral: true
             });
         else
-            i.editReply({
+            await i.editReply({
                 content: `> ✅ **Message found!**\n> ✅ **Reaction found!**\n> ✅ **Role is OK!**\n> ❓ *Booting the database...*`,
                 ephemeral: true
             });
@@ -125,10 +167,12 @@ export default async function run(bot, i) {
             "adminTag": i.user.tag,
             "channelID": channel.id,
             "roleID": role.id,
+            "welcomeChannelID": goodbyeChannel?.id,
             "welcome": welcome || `🟢 You have received **{role}** role on the **{guild}**!`,
-            "goodbye": goodbye || `🔴 You don't have **{role}** role on the **{guild}** any more.`,
-            "uses": 0,
-            "limit": parseInt(limit)
+            "goodbyeChannelID": goodbyeChannel?.id,
+            "goodbye": goodbye || `🔴 You don't have **{role}** role on the **{guild}** anymore.`,
+            "limit": parseInt(limit),
+            "maxClaims": parseInt(maxClaims)
         };
 
         dbPath = path.resolve("./db/");
@@ -137,10 +181,10 @@ export default async function run(bot, i) {
         db = exists ? JSON.parse(fs.readFileSync(guildPath, "utf-8")) : [];
 
         if (exists) {
-            const ar = db.filter(arr => arr.emoji === r.emoji.name && arr.msgID === message.id);
+            const ar = db.filter(arr => arr.emoji === emoji && arr.msgID === message.id);
             for (const arr of ar) {
                 if (arr.roleID === role.id) return i.editReply({
-                    content: `**Error!** There is already same setup. > ✅ **Message found!**\n> ✅ **Reaction found!**\n> ✅ **Role is OK!**\n> 🛑 **Database checked!**`,
+                    content: `**Error!** There is already **the same setup**.\n> ✅ **Message found!**\n> ✅ **Reaction found!**\n> ✅ **Role is OK!**\n> 🛑 **Database checked!**`,
                     ephemeral: true
                 });
             }
@@ -154,7 +198,7 @@ export default async function run(bot, i) {
         );
 
         console.log(i.user.tag, "from", i.guild.name, "added new reaction", emoji);
-        return await i.editReply({
+        return i.editReply({
             content: `**Setup done!**\n> ✅ **Message found!**\n> ✅ **Reaction found!**\n> ✅ **Role is OK!**\n> ✅ **Saved to the database!**`,
             ephemeral: true
         });
@@ -168,7 +212,7 @@ export default async function run(bot, i) {
         const guildPath = path.join(dbPath, i.guild.id + ".json");
         const exists = fs.existsSync(guildPath);
 
-        if (exists) i.editReply({
+        if (exists) await i.editReply({
             content: `> ✅ **Database found!**\n> ❓ *Searching for the record...*\n> ❓ *Deleting the record...*`,
             ephemeral: true
         });
@@ -177,21 +221,21 @@ export default async function run(bot, i) {
             ephemeral: true
         });
 
-        const db = JSON.parse(fs.readFileSync(guildPath, "utf-8"));
+        let db = JSON.parse(fs.readFileSync(guildPath, "utf-8"));
         const ar = db.find(arr => arr.emoji === emoji && arr.msgID === message);
         if (!ar) return i.editReply({
             content: `**Error!** Your query was not found.\n> ✅ **Database found!**\n> 🛑 **Record not found!**\n> ⭕ *Deleting the record...*`,
             ephemeral: true
         });
 
-        db.pop(ar);
+        db = db.filter(arr => !(arr.emoji === emoji && arr.msgID === message));
         fs.writeFileSync(
             guildPath,
             JSON.stringify(db, null, 4)
         );
 
         console.log(i.user.tag, "from", i.guild.name, "removed reaction", emoji);
-        return await i.editReply({
+        return i.editReply({
             content: `**Removal done!**\n> ✅ **Database found!**\n> ✅ **Record found!**\n> ✅ **Record deleted!**`,
             ephemeral: true
         });
