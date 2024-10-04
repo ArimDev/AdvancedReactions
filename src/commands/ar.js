@@ -1,10 +1,14 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionsBitField, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import fs from "fs";
 import path from "path";
 
 export const slash = new SlashCommandBuilder()
     .setName("ar")
     .setDescription("Edit Advanced Reactions system")
+    .setContexts([0])
+    .setIntegrationTypes([0])
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .setNSFW(false)
     .addSubcommand(subcommand =>
         subcommand
             .setName('setup')
@@ -64,9 +68,7 @@ export const slash = new SlashCommandBuilder()
                 option.setName("emoji")
                     .setDescription("Emoji of the reaction")
                     .setRequired(true))
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .setNSFW(false);
+    );
 
 export default async function run(bot, i) {
     const sub = i.options._subcommand;

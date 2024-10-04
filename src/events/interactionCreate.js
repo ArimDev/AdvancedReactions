@@ -7,7 +7,7 @@ export default async function (bot, i) {
             try {
                 command.default(bot, i);
             } catch (e) {
-                i.reply({ content: `🛑 Unexpected error! Sorry...`, ephemeral: true })
+                i.reply({ content: `🛑 Unexpected error! Sorry...`, ephemeral: true });
                 console.error(e);
             }
     }

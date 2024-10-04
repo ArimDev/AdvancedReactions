@@ -22,7 +22,10 @@ let bot = new Client({
 
 bot.commands = new Collection();
 bot.events = 0;
+bot.AR = new Object();
 bot.version = packageJson.version;
+
+bot.AR.color = "#89c853";
 
 import setupHandlers from "./src/functions/handlers.js";
 setupHandlers(bot);

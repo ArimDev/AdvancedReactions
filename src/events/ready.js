@@ -5,11 +5,11 @@ import AsciiTable from "ascii-table";
 
 export default async function (bot) {
     const db = fs.readdirSync(path.resolve("./db/"));
-    let records = 0;
+    let setups = 0;
     for (const guild of db) {
         if (guild === "01.json") continue;
-        const recs = JSON.parse(fs.readFileSync(path.join(path.resolve("./db/"), guild), "utf-8"));
-        records = records + recs.length;
+        const setupsDB = JSON.parse(fs.readFileSync(path.join(path.resolve("./db/"), guild), "utf-8"));
+        setups = setups + setupsDB.length;
     }
     const cmds = [];
     bot.commands.forEach((value, key) => {
@@ -28,7 +28,7 @@ export default async function (bot) {
                 .addRow("Bot Tag", bot.user.tag)
                 .addRow("Ready", true)
                 .addRow("Guilds", db.length - 1)
-                .addRow("Records", records)
+                .addRow("Setups", setups)
                 .addRow("Events", bot.events)
                 .addRow("Commands", cmds.length)
                 .setAlign(1, AsciiTable.CENTER);
