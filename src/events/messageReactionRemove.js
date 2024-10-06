@@ -16,34 +16,31 @@ export default async function (bot, r, u) {
     let db = fs.readFileSync(guildPath, "utf-8"); //Get the DB
     db = JSON.parse(db); //Get the parsed JSON data of DB record
 
-    const setups = db.filter(setup => setup.emoji === emojiName && setup.msgID === message.id); //Find the individual setup(s) in the DB record
-    if (!setups.length) return; //Did it find anything?
-
     const member = await guild.members.fetch({ user: u.id, cache: true, force: false, withPresences: false });
-    const usersReacted = Array.from((await r.users.fetch()).keys());
 
-    for (const setup of setups) { //Do something for each setup
-        if (setup.limit && usersReacted.filter(u => ![setup.adminID, bot.user.id].includes(u.id)).length >= setup.limit) //Ignore an admin's and/or a bot's reaction
-            return; //Has been the limit of reactions reached?
+    const setupsSameMessage = db.filter(setup => setup.msgID === message.id); //Find the individual setup(s) in the DB record
+    const setupsSameReaction = setupsSameMessage.filter(setup => setup.emoji === emojiName); //Find the individual setup(s) in the DB record
+    if (!setupsSameReaction.length) return; //Did it find anything?
 
-        if (setup.maxClaims) {
-            let alreadyClaimed = 1;
-            const allR = message.reactions.cache;
+    for (let setup of setupsSameReaction) {
+        let { reacted } = setup;
 
-            for (let oneR of allR.values()) { //Cycle every reaction
-                oneR = await oneR.users.fetch();
-                if (oneR.has(u.id)) alreadyClaimed++; //Did user react on this one?
-                if (setup.maxClaims < alreadyClaimed) return;
-            }
-        }
-
+        if (!member.roles.cache.has(setup.roleID)) return;
         const role = await guild.roles.fetch(setup.roleID, { cache: true, force: false });
-        if (!role || !role.editable) return;
+        if (!role || !role.editable) return; //Can the bot add/manage this role?
 
         member.roles.remove(
             role,
             `${member.user.tag} unreacted with ${emojiName} in ${message.channel.name}.`
         ).then(async () => {
+            reacted.splice(reacted.indexOf(u.id), 1);
+            setup["reacted"] = reacted;
+            db[db.indexOf(setup)] = setup;
+            fs.writeFileSync(
+                guildPath,
+                JSON.stringify(db, null, 4)
+            );
+
             const goodbye = setup.goodbye
                 .replaceAll("{memberNickname}", member.nickname || member.user.displayName)
                 .replaceAll("{memberUsername}", member.user.tag)

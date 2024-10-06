@@ -16,34 +16,39 @@ export default async function (bot, r, u) {
     let db = fs.readFileSync(guildPath, "utf-8"); //Get the DB
     db = JSON.parse(db); //Get the parsed JSON data of DB record
 
-    const setups = db.filter(setup => setup.emoji === emojiName && setup.msgID === message.id); //Find the individual setup(s) in the DB record
-    if (!setups.length) return; //Did it find anything?
-
     const member = await guild.members.fetch({ user: u.id, cache: true, force: false, withPresences: false });
-    const usersReacted = Array.from((await r.users.fetch()).keys());
 
-    for (const setup of setups) { //Do something for each setup
-        if (setup.limit && usersReacted.filter(u => ![setup.adminID, bot.user.id].includes(u.id)).length >= setup.limit) //Ignore an admin's and/or a bot's reaction
+    const setupsSameMessage = db.filter(setup => setup.msgID === message.id); //Find the individual setup(s) in the DB record
+    const setupsSameReaction = setupsSameMessage.filter(setup => setup.emoji === emojiName); //Find the individual setup(s) in the DB record
+    if (!setupsSameReaction.length) return; //Did it find anything?
+
+    for (let setup of setupsSameReaction) { 
+        let { reacted } = setup;
+        if (setup.limit && reacted.filter(u => ![setup.adminID, bot.user.id].includes(u)).length >= setup.limit) //Ignore an admin's and/or a bot's reaction
             return r.users.remove(u.id); //Has been the limit of reactions reached?
 
         if (setup.maxClaims) {
             let alreadyClaimed = 0;
-            const allR = message.reactions.cache;
-
-            for (let oneR of allR.values()) { //Cycle every reaction
-                oneR = await oneR.users.fetch();
-                if (oneR.has(u.id)) alreadyClaimed++; //Did user react on this one?
-                if (setup.maxClaims < alreadyClaimed) return r.users.remove(u.id);
+            for (const oneSetupReaction of setupsSameMessage) { //Cycle every reaction
+                const { reacted } = oneSetupReaction;
+                if (reacted.includes(u.id)) alreadyClaimed++; //Did user react on this one?
+                if (alreadyClaimed >= setup.maxClaims) return r.users.remove(u.id);
             }
         }
 
         const role = await guild.roles.fetch(setup.roleID, { cache: true, force: false });
-        if (!role || !role.editable) return r.users.remove(u.id);
+        if (!role || !role.editable) return r.users.remove(u.id); //Can the bot add/manage this role?
 
         member.roles.add(
             role,
             `${member.user.tag} reacted with ${emojiName} in ${message.channel.name}.`
         ).then(async () => {
+            db[db.indexOf(setup)].reacted.push(u.id);
+            fs.writeFileSync(
+                guildPath,
+                JSON.stringify(db, null, 4)
+            );
+
             const welcome = setup.welcome
                 .replaceAll("{memberNickname}", member.nickname || member.user.displayName)
                 .replaceAll("{memberUsername}", member.user.tag)

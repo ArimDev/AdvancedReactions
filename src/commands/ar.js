@@ -52,7 +52,7 @@ export const slash = new SlashCommandBuilder()
                     .setRequired(false))
             .addIntegerOption(option =>
                 option.setName("maxclaims")
-                    .setDescription("Count if roles can user claim from this message [OVERWRITES PREVIOUS maxclaims SETTING]")
+                    .setDescription("Count of roles can user claim from this message")
                     .setRequired(false)
                     .setMinValue(1))
     )
@@ -86,6 +86,10 @@ export default async function run(bot, i) {
         const goodbye = i.options.getString("goodbye");
         const limit = i.options.getInteger("limit");
         const maxClaims = i.options.getInteger("maxclaims");
+
+        if (!i.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return i.reply({ content: `🛑 You don't have **the Administrator permission**!`, ephemeral: true });
+        }
 
         if (![0, 5, 11, 12].includes(channel.type))
             return i.editReply({ content: `🛑 Channel <#${channel.id}> is **not a text type**! There are no messages.`, ephemeral: true });
@@ -174,7 +178,8 @@ export default async function run(bot, i) {
             "goodbyeChannelID": goodbyeChannel?.id,
             "goodbye": goodbye || `🔴 You don't have **{role}** role on the **{guild}** anymore.`,
             "limit": parseInt(limit),
-            "maxClaims": parseInt(maxClaims)
+            "maxClaims": parseInt(maxClaims),
+            "reacted": []
         };
 
         dbPath = path.resolve("./db/");
@@ -238,7 +243,7 @@ export default async function run(bot, i) {
 
         console.log(i.user.tag, "from", i.guild.name, "removed reaction", emoji);
         return i.editReply({
-            content: `**Removal done!**\n> ✅ **Database found!**\n> ✅ **Record found!**\n> ✅ **Record deleted!**`,
+            content: `**Removal done!**\n> ✅ **Database found!**\n> ✅ **Record found!**\n> ✅ **Record deleted!**\n-# * The reactions themselves (on Discord) weren't deleted.`,
             ephemeral: true
         });
     }

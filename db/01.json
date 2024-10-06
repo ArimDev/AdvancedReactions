@@ -11,6 +11,10 @@
         "goodbyeChannelID": "01",
         "goodbye": "You won't receive any updates from now on.",
         "limit": 12,
-        "maxClaims": 1
+        "maxClaims": 1,
+        "reacted": [
+            "01",
+            "01"
+        ]
     }
 ]
