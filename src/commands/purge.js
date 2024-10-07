@@ -1,6 +1,4 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import fs from "fs";
-import path from "path";
 
 export const slash = new SlashCommandBuilder()
     .setName("purge")

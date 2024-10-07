@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import fs from "fs";
 import path from "path";
 
@@ -213,18 +213,32 @@ export default async function run(bot, i) {
         await i.deferReply({ ephemeral: true });
 
         const message = i.options.getString("message");
-        const emoji = i.options.getString("emoji");
+        let emoji = i.options.getString("emoji");
+        const numMap = new Map([
+            ["0⃣", ":zero:"],
+            ["1⃣", ":one:"],
+            ["2⃣", ":two:"],
+            ["3⃣", ":three:"],
+            ["4⃣", ":four:"],
+            ["5⃣", ":five:"],
+            ["6⃣", ":six:"],
+            ["7⃣", ":seven:"],
+            ["8⃣", ":eight:"],
+            ["9⃣", ":nine:"],
+            ["🔟", ":ten:"]
+        ]);
+        if (numMap.has(emoji)) emoji = numMap.get(emoji);
 
         const dbPath = path.resolve("./db/");
         const guildPath = path.join(dbPath, i.guild.id + ".json");
-        const exists = fs.existsSync(guildPath);
+        const exists = fs.existsSync(guildPath); //Is this guild in the database?
 
         if (exists) await i.editReply({
             content: `> ✅ **Database found!**\n> ❓ *Searching for the record...*\n> ❓ *Deleting the record...*`,
             ephemeral: true
         });
         else return i.editReply({
-            content: `**Error!** You did not set any AdvancedReaction yet.\n> 🛑 **Database not found!**\n> ⭕ *Searching for the record...*\n> ⭕ *Deleting the record...*`,
+            content: `**Error!** You did not set AdvancedReactions setup yet.\n> 🛑 **Database not found!**\n> ⭕ *Searching for the record...*\n> ⭕ *Deleting the record...*`,
             ephemeral: true
         });
 
@@ -243,7 +257,7 @@ export default async function run(bot, i) {
 
         console.log(i.user.tag, "from", i.guild.name, "removed reaction", emoji);
         return i.editReply({
-            content: `**Removal done!**\n> ✅ **Database found!**\n> ✅ **Record found!**\n> ✅ **Record deleted!**\n-# * The reactions themselves (on Discord) weren't deleted.`,
+            content: `**Removal done!**\n> ✅ **Database found!**\n> ✅ **Record found!**\n> ✅ **Record deleted!**\n-# \* The reactions themselves (on Discord) weren't deleted.`,
             ephemeral: true
         });
     }
