@@ -174,9 +174,9 @@ export default async function run(bot, i) {
             "channelID": channel.id,
             "roleID": role.id,
             "welcomeChannelID": goodbyeChannel?.id,
-            "welcome": welcome || `🟢 You have received **{role}** role on the **{guild}**!`,
+            "welcome": welcome || `🟢 You have received **{roleName}** role on the **{guild}**!`,
             "goodbyeChannelID": goodbyeChannel?.id,
-            "goodbye": goodbye || `🔴 You don't have **{role}** role on the **{guild}** anymore.`,
+            "goodbye": goodbye || `🔴 You don't have **{roleName}** role on the **{guild}** anymore.`,
             "limit": parseInt(limit),
             "maxClaims": parseInt(maxClaims),
             "reacted": []

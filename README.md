@@ -6,9 +6,17 @@
 
 Discord bot with an advanced reaction roles system.
 
+**[INVITE THE BOT TO YOUR SERVER](https://discord.com/oauth2/authorize?client_id=1285718127417626645)**
+
 [![Creative Commons License](https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc-nd/4.0/)
 
 </div>
+
+---
+
+## Wiki
+
+Check out the [AdvancedReactions wiki](https://github.com/ArimDev/AdvancedReactions/wiki) for learning how the code works, examples with images, bot commands lists, and more!
 
 ---
 
