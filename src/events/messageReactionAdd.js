@@ -1,4 +1,5 @@
 import fs from "fs";
+import fsp from "fs/promises";
 import path from "path";
 import userCache from "../functions/cache.js";
 
@@ -7,7 +8,7 @@ export default async function (bot, r, u) {
 
     if (userCache.has(u.id)) return r.users.remove(u.id);
 
-    userCache.set(u.id, true); //Add the user to the cacheF
+    userCache.set(u.id, true); //Add the user to the cache
 
     let { message, emoji } = r;
     const { guild } = message;
@@ -34,28 +35,30 @@ export default async function (bot, r, u) {
         if (member.roles.cache.has(setup.roleID)) {
             if (!db[db.indexOf(setup)].reacted.includes(member.id))
                 db[db.indexOf(setup)].reacted.push(u.id);
-            return fs.writeFileSync(
+            fs.writeFileSync(
                 guildPath,
                 JSON.stringify(db, null, 4)
             );
+            return userCache.delete(u.id);
         }
 
         if (db[db.indexOf(setup)].reacted.includes(member.id)) {
             const role = await guild.roles.fetch(setup.roleID, { cache: true, force: false });
             if (!role || !role.editable) {
-                userCache.delete(u.id);
-                return r.users.remove(u.id); //Can the bot add/manage this role?
+                await r.users.remove(u.id); //Can the bot add/manage this role?
+                return userCache.delete(u.id);
             }
 
-            return member.roles.add(
+            await member.roles.add(
                 role,
                 `${member.user.tag} reacted with ${emojiName} in ${message.channel.name}.`
             );
+            return userCache.delete(u.id);
         }
 
-        if (setup.limit && reacted.filter(u => ![setup.adminID, bot.user.id].includes(u)).length >= setup.limit) {//Ignore an admin's and/or a bot's reaction
-            userCache.delete(u.id);
-            return r.users.remove(u.id); //Has been the limit of reactions reached?
+        if (setup.limit && (reacted.filter(u => ![setup.adminID, bot.user.id].includes(u)).length >= setup.limit)) {//Ignore an admin's and/or a bot's reaction
+            await r.users.remove(u.id); //Has been the limit of reactions reached?
+            return userCache.delete(u.id);
         }
 
         if (setup.maxClaims) {
@@ -64,16 +67,16 @@ export default async function (bot, r, u) {
                 const { reacted } = oneSetupReaction;
                 if (reacted.includes(u.id)) alreadyClaimed++; //Did user react on this one?
                 if (alreadyClaimed >= setup.maxClaims) {
-                    userCache.delete(u.id);
-                    return r.users.remove(u.id);
+                    await r.users.remove(u.id);
+                    return userCache.delete(u.id);
                 }
             }
         }
 
         const role = await guild.roles.fetch(setup.roleID, { cache: true, force: false });
         if (!role || !role.editable) {
-            userCache.delete(u.id);
-            return r.users.remove(u.id); //Can the bot add/manage this role?
+            await r.users.remove(u.id); //Can the bot add/manage this role?
+            return userCache.delete(u.id);
         }
 
         await member.roles.add(
@@ -81,9 +84,10 @@ export default async function (bot, r, u) {
             `${member.user.tag} reacted with ${emojiName} in ${message.channel.name}.`
         );
 
+        console.log("5")
         if (!db[db.indexOf(setup)].reacted.includes(member.id))
             db[db.indexOf(setup)].reacted.push(u.id);
-        fs.writeFileSync(
+        await fsp.writeFile(
             guildPath,
             JSON.stringify(db, null, 4)
         );
@@ -109,7 +113,7 @@ export default async function (bot, r, u) {
             } catch { }
         }
 
-        userCache.delete(u.id); //Delete the user from the cache
-        return console.log(u.tag, "from", guild.name, "reacted with", emojiName);
+        console.log(u.tag, "from", guild.name, "reacted with", emojiName);
+        return userCache.delete(u.id);
     }
 }
