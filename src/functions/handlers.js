@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 
-
 export default async function handlers(bot) {
     const eventsFolder = fs.readdirSync(path.resolve("./src/events")).filter(file => file.endsWith(".js"));
     for (const file of eventsFolder) {

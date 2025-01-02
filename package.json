@@ -1,6 +1,6 @@
 {
   "name": "advancedreactions",
-  "version": "1.7",
+  "version": "1.7.1",
   "description": "AdvancedReactions is a Discord bot with an advanced reaction roles system.",
   "main": "index.js",
   "type": "module",
@@ -12,7 +12,7 @@
     "url": "git+https://github.com/ArimDev/AdvancedReactions.git"
   },
   "author": "PetyXbron",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "CC BY-NC-ND 4.0",
   "bugs": {
     "url": "https://github.com/ArimDev/AdvancedReactions/issues"
   },
