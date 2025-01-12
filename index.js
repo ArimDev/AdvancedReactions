@@ -1,6 +1,8 @@
 console.log("AdvancedReactions started!");
 
-import packageJson from "./package.json" assert { type: "json" };
+import fs from "fs/promises"
+const packageJson = JSON.parse(await fs.readFile("./package.json"))
+
 import dotenv from "dotenv";
 dotenv.config();
 

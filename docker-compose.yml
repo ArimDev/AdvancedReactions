@@ -1,0 +1,16 @@
+services:
+  AdvancedReactions:
+    image: advancedreactions
+    build: .
+    container_name: AdvancedReactions
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/bot
+    networks:
+      - Cordos
+
+networks:
+  Cordos:
+    external: true
