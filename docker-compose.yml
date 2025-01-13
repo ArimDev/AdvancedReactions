@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     volumes:
-      - .:/bot
+      - ./db:/db
     networks:
       - Cordos
 
